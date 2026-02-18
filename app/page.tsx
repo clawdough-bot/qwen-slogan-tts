@@ -17,6 +17,37 @@ const EMOTIONS = [
   { id: "serious", label: "Poważny" },
 ];
 
+const SCENES = [
+  {
+    id: "tv_spot",
+    label: "Spot TV",
+    description: "Szeroki, nośny głos do reklamy telewizyjnej.",
+    voice: "promo",
+    emotion: "excited",
+  },
+  {
+    id: "radio_ad",
+    label: "Reklama radiowa",
+    description: "Mocne, dynamiczne czytanie dla radia.",
+    voice: "brand_male",
+    emotion: "serious",
+  },
+  {
+    id: "social_promo",
+    label: "Social promo",
+    description: "Lżejszy, bardziej rozmowny styl.",
+    voice: "brand_female",
+    emotion: "warm",
+  },
+  {
+    id: "narration",
+    label: "Narracja",
+    description: "Spokojna, filmowa narracja.",
+    voice: "narrator",
+    emotion: "neutral",
+  },
+];
+
 interface ClipMeta {
   url: string;
   voice: string;
@@ -32,6 +63,15 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clips, setClips] = useState<ClipMeta[]>([]);
+  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
+
+  function applyScene(sceneId: string) {
+    const scene = SCENES.find((s) => s.id === sceneId);
+    if (!scene) return;
+    setSelectedSceneId(sceneId);
+    setVoice(scene.voice);
+    setEmotion(scene.emotion);
+  }
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +114,12 @@ export default function HomePage() {
     }
   }
 
+  function handleRefineFromClip(clip: ClipMeta) {
+    setVoice(clip.voice);
+    setEmotion(clip.emotion);
+    setSelectedSceneId(null);
+  }
+
   return (
     <main className={styles.shell}>
       <div className={styles.deviceShadow}>
@@ -102,6 +148,25 @@ export default function HomePage() {
                 />
               </div>
 
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Scena</label>
+                <div className={styles.sceneStrip}>
+                  {SCENES.map((scene) => (
+                    <button
+                      key={scene.id}
+                      type="button"
+                      className={`${styles.sceneButton} ${
+                        selectedSceneId === scene.id ? styles.sceneButtonActive : ""
+                      }`}
+                      onClick={() => applyScene(scene.id)}
+                    >
+                      <span className={styles.sceneLabel}>{scene.label}</span>
+                      <span className={styles.sceneDescription}>{scene.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className={styles.grid2}>
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>Głos</label>
@@ -110,7 +175,10 @@ export default function HomePage() {
                       <button
                         key={v.id}
                         type="button"
-                        onClick={() => setVoice(v.id)}
+                        onClick={() => {
+                          setVoice(v.id);
+                          setSelectedSceneId(null);
+                        }}
                         className={`${styles.segmentedButton} ${
                           voice === v.id ? styles.segmentedButtonActive : ""
                         }`}
@@ -128,7 +196,10 @@ export default function HomePage() {
                       <button
                         key={eItem.id}
                         type="button"
-                        onClick={() => setEmotion(eItem.id)}
+                        onClick={() => {
+                          setEmotion(eItem.id);
+                          setSelectedSceneId(null);
+                        }}
                         className={`${styles.segmentedButton} ${
                           emotion === eItem.id ? styles.segmentedButtonActive : ""
                         }`}
@@ -177,13 +248,22 @@ export default function HomePage() {
                       </span>
                     </div>
                     <audio controls src={clip.url} className={styles.audio} />
-                    <a
-                      href={clip.url}
-                      download={`slogan-take-${clip.index}.mp3`}
-                      className={styles.downloadLink}
-                    >
-                      Pobierz mp3
-                    </a>
+                    <div className={styles.clipActions}>
+                      <a
+                        href={clip.url}
+                        download={`slogan-take-${clip.index}.mp3`}
+                        className={styles.downloadLink}
+                      >
+                        Pobierz mp3
+                      </a>
+                      <button
+                        type="button"
+                        className={styles.refineButton}
+                        onClick={() => handleRefineFromClip(clip)}
+                      >
+                        Ustaw jako bazę
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
